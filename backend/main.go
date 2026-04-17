@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -22,7 +24,10 @@ func main() {
 	// API simulation
 	mux.HandleFunc("/api/hello", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello from go backend"))
+		w.Write([]byte("Hello from go backend\n"))
+
+		ip := getClientIP(r)
+		fmt.Fprintf(w, "Hai from %s", ip)
 	})
 
 	server := &http.Server{
@@ -53,4 +58,25 @@ func main() {
 	}
 
 	log.Println("Server exited cleanly")
+}
+
+func getClientIP(r *http.Request) string {
+	fmt.Println("X-Forwarded-For:", r.Header.Get("X-Forwarded-For"))
+	fmt.Println("X-Real-IP:", r.Header.Get("X-Real-IP"))
+	fmt.Println("RemoteAddr:", r.RemoteAddr)
+
+	// Cek X-Forwarded-For
+	xff := r.Header.Get("X-Forwarded-For")
+	if xff != "" {
+		return strings.TrimSpace(strings.Split(xff, ",")[0])
+	}
+
+	// Cek X-Real-IP
+	xrip := r.Header.Get("X-Real-IP")
+	if xrip != "" {
+		return xrip
+	}
+
+	// Fallback
+	return r.RemoteAddr
 }
