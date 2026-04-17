@@ -1,0 +1,26 @@
+
+services:
+  app:
+    build: ./backend
+    container_name: go-backend
+    ports:
+      - "8080:8080"
+    healthcheck:
+      # test: ["executable", "arg"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 30s
+      retries: 3
+      # start_period: 30s
+  nginx:
+    image: nginx:latest
+    container_name: my-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./html:/usr/share/nginx/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app:
+        condition: service_healthy
+    
